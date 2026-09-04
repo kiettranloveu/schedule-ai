@@ -302,7 +302,10 @@ async function testDiscordConnection(token, channelId) {
   });
 
   try {
-    await testClient.login(token);
+    const loginPromise = testClient.login(token);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Quá thời gian kết nối (Timeout). Vui lòng thử lại.')), 10000));
+    await Promise.race([loginPromise, timeoutPromise]);
+    
     const channel = await testClient.channels.fetch(channelId);
     if (!channel || !channel.isTextBased()) {
       await testClient.destroy();
