@@ -1,7 +1,7 @@
 import React from 'react';
-import { Calendar, CheckSquare, Zap, Settings, Sun, Moon, Radio, Bot, Sparkles } from 'lucide-react';
+import { Calendar, CheckSquare, Zap, Settings, Sun, Moon, Radio, Bot, Sparkles, LogOut } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, status, theme, toggleTheme }) {
+export default function Navbar({ activeTab, setActiveTab, status, theme, toggleTheme, onLogout }) {
   const isDiscordConnected = status?.discord?.connected;
   const isGeminiReady = status?.gemini?.ready;
 
@@ -115,6 +115,18 @@ export default function Navbar({ activeTab, setActiveTab, status, theme, toggleT
           >
             {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
           </button>
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              title="Đăng xuất khỏi hệ thống"
+              className="p-2 px-3 rounded-xl text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 transition flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Thoát</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

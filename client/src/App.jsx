@@ -9,9 +9,13 @@ import RecurringJobsView from './components/RecurringJobsView';
 import JobModal from './components/JobModal';
 import LogsModal from './components/LogsModal';
 import SettingsView from './components/SettingsView';
+import LoginView from './components/LoginView';
 import { api } from './services/api';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => api.isAuthenticated());
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   const [activeTab, setActiveTab] = useState('calendar');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
@@ -68,12 +72,32 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchAllData();
+    const initAuth = async () => {
+      if (api.isAuthenticated()) {
+        const ok = await api.verifyAuth();
+        if (ok) {
+          setIsAuthenticated(true);
+          fetchAllData();
+        } else {
+          api.logout();
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsCheckingAuth(false);
+    };
+
+    initAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const interval = setInterval(() => {
       api.getStatus().then(st => setStatus(st)).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
   // Event Handlers
   const handleAddEvent = (date) => {
@@ -226,6 +250,28 @@ export default function App() {
     setTasks(tsks);
   };
 
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-medium">Đang kiểm tra bảo mật...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <LoginView
+        onLoginSuccess={() => {
+          setIsAuthenticated(true);
+          fetchAllData();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Navbar */}
@@ -235,6 +281,10 @@ export default function App() {
         status={status}
         theme={theme}
         toggleTheme={toggleTheme}
+        onLogout={() => {
+          api.logout();
+          setIsAuthenticated(false);
+        }}
       />
 
       {/* Main Content Area */}

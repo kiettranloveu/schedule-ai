@@ -7,7 +7,39 @@ const client = axios.create({
   }
 });
 
+// Gắn token tự động vào mỗi request
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('scheduleai_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const api = {
+  // Auth
+  login: async (username, password) => {
+    const res = await client.post('/auth/login', { username, password });
+    if (res.data.success && res.data.token) {
+      localStorage.setItem('scheduleai_token', res.data.token);
+    }
+    return res.data;
+  },
+  verifyAuth: async () => {
+    try {
+      const res = await client.get('/auth/me');
+      return res.data.success;
+    } catch (e) {
+      return false;
+    }
+  },
+  logout: () => {
+    localStorage.removeItem('scheduleai_token');
+  },
+  isAuthenticated: () => {
+    return !!localStorage.getItem('scheduleai_token');
+  },
+
   // Events
   getEvents: async (startDate, endDate) => {
     const params = {};

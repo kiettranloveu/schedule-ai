@@ -8,6 +8,8 @@ const eventsRouter = require('./routes/events');
 const tasksRouter = require('./routes/tasks');
 const recurringRouter = require('./routes/recurring');
 const settingsRouter = require('./routes/settings');
+const authRouter = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
 
 const discordBot = require('./discordBot');
 const scheduler = require('./scheduler');
@@ -19,10 +21,11 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
-app.use('/api/events', eventsRouter);
-app.use('/api/tasks', tasksRouter);
-app.use('/api/recurring', recurringRouter);
-app.use('/api/settings', settingsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/events', requireAuth, eventsRouter);
+app.use('/api/tasks', requireAuth, tasksRouter);
+app.use('/api/recurring', requireAuth, recurringRouter);
+app.use('/api/settings', requireAuth, settingsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
