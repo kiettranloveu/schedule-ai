@@ -1,0 +1,36 @@
+{
+  "name": "schedule-ai",
+  "version": "1.0.0",
+  "description": "ScheduleAI - Smart Calendar & Recurring AI Tasks with 2-way Discord Bot",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
+    "client": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "setup": "npm install && cd client && npm install"
+  },
+  "keywords": [
+    "calendar",
+    "discord-bot",
+    "gemini-ai",
+    "automation",
+    "cron"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^2.21.0",
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.20.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "node-cron": "^4.6.0"
+  }
+}
