@@ -373,7 +373,7 @@ router.post('/test-xkiro', async (req, res) => {
             'Authorization': `Bearer ${testKey}`,
             'Content-Type': 'application/json'
           },
-          timeout: 25000
+          timeout: 10000
         });
 
         const reply = response.data?.choices?.[0]?.message?.content;
@@ -390,6 +390,12 @@ router.post('/test-xkiro', async (req, res) => {
 
         // Nếu lỗi 401 (Invalid Key), không cần thử tiếp các model khác
         if (errCode === 401 || (errMsg && errMsg.toLowerCase().includes('invalid api key'))) {
+          break;
+        }
+
+        // Nếu lỗi 429 (Rate Limit), ngưng thử nghiệm để tránh treo trang
+        if (errCode === 429) {
+          console.warn(`[test-ai] Bị Rate Limit ở model ${curModel}, dừng test để tránh treo.`);
           break;
         }
       }
