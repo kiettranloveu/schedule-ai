@@ -151,7 +151,7 @@ async function callOpenAICompatible(prompt, systemPrompt = '') {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 35000
+        timeout: 15000 // Giảm xuống 15s để tránh Render timeout 100s
       });
 
       const content = response.data?.choices?.[0]?.message?.content;
@@ -162,7 +162,17 @@ async function callOpenAICompatible(prompt, systemPrompt = '') {
       lastError = err;
       const errMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message;
       console.warn(`[${provider.toUpperCase()}] Model ${curModel} error: ${errMessage}`);
+      
+      // Nếu lỗi 401 Unauthorized, ngắt ngay lập tức
       if (err.response?.status === 401) break;
+      
+      // Nếu lỗi 429 Rate Limit (thường do dùng Free tier), chỉ thử tối đa 2 model để tránh treo quá lâu
+      if (err.response?.status === 429) {
+         if (uniqueCandidates.indexOf(curModel) >= 1) {
+            console.warn(`[${provider.toUpperCase()}] Đã thử 2 models đều bị Rate Limit. Dừng lại để tránh treo.`);
+            break; 
+         }
+      }
     }
   }
 

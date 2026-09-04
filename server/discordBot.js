@@ -49,7 +49,7 @@ async function initDiscordBot() {
     partials: [Partials.Channel]
   });
 
-  client.once('ready', () => {
+  client.on('ready', () => {
     botStatus.connected = true;
     botStatus.username = client.user.tag;
     botStatus.lastError = null;
@@ -58,7 +58,6 @@ async function initDiscordBot() {
 
   client.on('error', (err) => {
     console.error('[DiscordBot] Lỗi kết nối:', err.message);
-    botStatus.connected = false;
     botStatus.lastError = err.message;
   });
 
@@ -242,7 +241,7 @@ async function handleTodaySchedule(message) {
  * Gửi thông báo Rich Embed tới Channel mặc định
  */
 async function sendDiscordNotification(embedOptions) {
-  if (!client || !botStatus.connected) {
+  if (!client || !client.isReady()) {
     throw new Error('Discord Bot chưa kết nối. Vui lòng kiểm tra Token trong Cài đặt.');
   }
 
@@ -327,6 +326,9 @@ async function testDiscordConnection(token, channelId) {
 }
 
 function getBotStatus() {
+  if (client) {
+    botStatus.connected = client.isReady();
+  }
   return botStatus;
 }
 
