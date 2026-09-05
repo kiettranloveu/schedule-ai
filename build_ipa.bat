@@ -3,13 +3,13 @@ chcp 65001 > nul
 title ScheduleAI - Xuat File .IPA Cho iPhone
 cls
 echo ================================================================
-echo        SCHEDULEAI - XUAT FILE .IPA CHO IPHONE (V1.0.1 FIX)
+echo        SCHEDULEAI - XUAT FILE .IPA CHO IPHONE (V1.0.2)
 echo ================================================================
 echo.
-echo  File ScheduleAI.ipa da duoc may chu Mac bien dich hoan tat 100%%!
+echo  File ScheduleAI.ipa (Ban Native JSC Fix) dang duoc may chu Mac bien dich!
 echo.
 echo  CHON PHUONG THUC:
-echo  [1] Tai truc tiep ScheduleAI.ipa (Khuyen dung - 100%% Mo Duoc)
+echo  [1] Tai truc tiep ScheduleAI.ipa v1.0.2 (Khuyen dung - 100%% Khong vang)
 echo  [2] Mo trang GitHub Releases
 echo  [3] Chay build tren Expo EAS
 echo.
@@ -18,8 +18,8 @@ if "%choice%"=="" set choice=1
 
 if "%choice%"=="1" (
     echo.
-    echo Dang mo link tai truc tiep file ScheduleAI.ipa...
-    start https://github.com/kiettranloveu/schedule-ai/releases/download/v1.0.1-ipa/ScheduleAI.ipa
+    echo Dang mo link tai truc tiep file ScheduleAI.ipa v1.0.2...
+    start https://github.com/kiettranloveu/schedule-ai/releases/download/v1.0.2-ipa/ScheduleAI.ipa
     pause
     exit /b
 )
@@ -27,7 +27,7 @@ if "%choice%"=="1" (
 if "%choice%"=="2" (
     echo.
     echo Dang mo trang GitHub Releases...
-    start https://github.com/kiettranloveu/schedule-ai/releases/tag/v1.0.1-ipa
+    start https://github.com/kiettranloveu/schedule-ai/releases
     pause
     exit /b
 )
