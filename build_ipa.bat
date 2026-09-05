@@ -6,33 +6,33 @@ echo ================================================================
 echo        SCHEDULEAI - XUAT FILE .IPA CHO IPHONE
 echo ================================================================
 echo.
-echo  File .IPA da duoc he thong may chu Apple Mac bien dich xong!
+echo  File .IPA (Ban sua loi mo app) dang duoc he thong bien dich!
 echo.
 echo  CHON PHUONG THUC:
-echo  [1] Mo trang tai truc tiep file ScheduleAI.ipa (Khuyen dung cho Scarlet/Esign)
-echo  [2] Chay build tren Expo EAS (Yeu cau tai khoan Apple Developer)
-echo  [3] Mo trang GitHub Actions de xem tien trinh Cloud Build
+echo  [1] Mo trang Releases de tai truc tiep file ScheduleAI.ipa (Khuyen dung)
+echo  [2] Mo trang GitHub Actions xem tien trinh Cloud Build
+echo  [3] Chay build tren Expo EAS (Yeu cau tai khoan Apple Developer)
 echo.
 set /p choice="Nhap lua chon (1, 2 hoac 3) [Mac dinh: 1]: "
 if "%choice%"=="" set choice=1
 
 if "%choice%"=="1" (
     echo.
-    echo Dang mo trang tai file .IPA tren trinh duyet...
-    start https://github.com/kiettranloveu/schedule-ai/actions/runs/33955184980
-    pause
-    exit /b
-)
-
-if "%choice%"=="3" (
-    echo.
-    echo Dang mo GitHub Actions...
-    start https://github.com/kiettranloveu/schedule-ai/actions
+    echo Dang mo trang tai Releases tren trinh duyet...
+    start https://github.com/kiettranloveu/schedule-ai/releases
     pause
     exit /b
 )
 
 if "%choice%"=="2" (
+    echo.
+    echo Dang mo GitHub Actions...
+    start https://github.com/kiettranloveu/schedule-ai/actions/runs/33956193005
+    pause
+    exit /b
+)
+
+if "%choice%"=="3" (
     cd /d "%~dp0mobile"
     echo.
     echo Kiem tra dang nhap Expo...
