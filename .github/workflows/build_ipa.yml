@@ -1,0 +1,70 @@
+name: Build iOS IPA for Scarlet & Esign
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build_ipa.yml'
+
+jobs:
+  build:
+    name: Build Unsigned iOS IPA
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: mobile/package.json
+
+      - name: Install Mobile Dependencies
+        working-directory: mobile
+        run: |
+          npm install --legacy-peer-deps
+
+      - name: Prebuild Native iOS Project
+        working-directory: mobile
+        run: |
+          npx expo prebuild -p ios --clean
+
+      - name: Install CocoaPods
+        working-directory: mobile/ios
+        run: |
+          pod install --repo-update
+
+      - name: Compile iOS App (Xcode Unsigned)
+        working-directory: mobile/ios
+        run: |
+          xcodebuild -workspace ScheduleAI.xcworkspace \
+            -scheme ScheduleAI \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            clean build
+
+      - name: Package into .IPA (Scarlet / Esign / GBox compatible)
+        run: |
+          mkdir -p Payload
+          APP_PATH=$(find mobile/ios/build/Build/Products/Release-iphoneos -name "*.app" -maxdepth 1)
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/ScheduleAI.app
+          zip -r -9 ScheduleAI.ipa Payload
+          ls -lh ScheduleAI.ipa
+
+      - name: Upload IPA Artifact (Direct Download)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScheduleAI-iOS-IPA
+          path: ScheduleAI.ipa
+          retention-days: 14
