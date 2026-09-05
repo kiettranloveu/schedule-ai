@@ -6,15 +6,19 @@ echo ================================================================
 echo        SCHEDULEAI - XUAT FILE .IPA CHO IPHONE (EAS BUILD)
 echo ================================================================
 echo.
-echo [1/3] Kiem tra cau hinh du an mobile...
+echo [1/2] Dang chuyen toi thu muc ung dung mobile...
 cd mobile
 echo.
-echo [2/3] Dang ket noi Expo Cloud de bien dich thanh file .IPA...
+echo [2/2] Dang ket noi Expo Cloud de bien dich thanh file .IPA...
 echo.
-echo * Neu chua dang nhap Expo, he thong se hien thi menu dang nhap
-echo   (Chon "Log in with browser" hoac nhap tai khoan expo.dev mien phi).
+echo ================================================================
+echo  * HUONG DAN DANG NHAP TREN BAN PHIM (Chi hoi 1 lan):
+echo    - Khi terminal hien: "Log in to EAS"
+echo    - Ban dung phim mui ten xuong chon: "Log in with browser" ➔ Nhan Enter
+echo    - Trinh duyet web se mo ra, ban chi can dang nhap Google la xong!
+echo    - He thong se tu dong build va gui lai LINK TAI FILE .IPA cho ban.
+echo ================================================================
 echo.
-echo [3/3] Bat dau build file .IPA cho iPhone...
-echo.
-npx eas build -p ios --profile preview
+
+call .\node_modules\.bin\eas.cmd build -p ios --profile preview
 pause
