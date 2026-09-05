@@ -16,32 +16,43 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Repository
+      - name: ⬇️ Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: 🟢 Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: mobile/package.json
 
-      - name: Install Mobile Dependencies
+      - name: 🔗 Ensure Node is globally accessible for Xcode
+        run: |
+          sudo ln -sf $(which node) /usr/local/bin/node
+          sudo ln -sf $(which npm) /usr/local/bin/npm
+          sudo ln -sf $(which npx) /usr/local/bin/npx
+          node -v
+
+      - name: 📦 Install Mobile Dependencies
         working-directory: mobile
         run: |
           npm install --legacy-peer-deps
 
-      - name: Prebuild Native iOS Project
+      - name: 🛠️ Prebuild Native iOS Project
         working-directory: mobile
         run: |
           npx expo prebuild -p ios --clean
 
-      - name: Install CocoaPods
+      - name: 🛡️ Clean Entitlements for Free Sideloading
+        run: |
+          find mobile/ios -name "*.entitlements" -exec sed -i '' '/aps-environment/,+1d' {} + || true
+
+      - name: ☕ Install CocoaPods
         working-directory: mobile/ios
         run: |
           pod install --repo-update
 
-      - name: Compile iOS App (Xcode Unsigned)
+      - name: 🔨 Compile iOS Native Binary (Xcode Unsigned)
         working-directory: mobile/ios
         run: |
           xcodebuild -workspace ScheduleAI.xcworkspace \
@@ -55,16 +66,30 @@ jobs:
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             clean build
 
-      - name: Package into .IPA (Scarlet / Esign / GBox compatible)
+      - name: 📦 Inject Verified JS Bundle and Assets into .app
+        run: |
+          APP_PATH=$(find mobile/ios/build/Build/Products/Release-iphoneos -name "*.app" -maxdepth 1)
+          echo "Found app binary at: $APP_PATH"
+          cd mobile
+          npx expo export:embed \
+            --entry-file index.js \
+            --platform ios \
+            --dev false \
+            --bundle-output "../$APP_PATH/main.jsbundle" \
+            --assets-dest "../$APP_PATH"
+          cd ..
+          echo "Verifying main.jsbundle inside app:"
+          ls -lh "$APP_PATH/main.jsbundle"
+
+      - name: 📦 Package into .IPA (Scarlet / Esign / GBox compatible)
         run: |
           mkdir -p Payload
           APP_PATH=$(find mobile/ios/build/Build/Products/Release-iphoneos -name "*.app" -maxdepth 1)
-          echo "Found app at: $APP_PATH"
           cp -r "$APP_PATH" Payload/ScheduleAI.app
           zip -r -9 ScheduleAI.ipa Payload
           ls -lh ScheduleAI.ipa
 
-      - name: Upload IPA Artifact (Direct Download)
+      - name: 🚀 Upload IPA Artifact (Direct Download)
         uses: actions/upload-artifact@v4
         with:
           name: ScheduleAI-iOS-IPA
@@ -75,10 +100,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: v1.0.0-ipa
-          name: ScheduleAI iOS App v1.0.0 (.IPA)
+          tag_name: v1.0.1-ipa
+          name: ScheduleAI iOS App v1.0.1 (.IPA Fix)
           body: |
-            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA)
-            - Nhấn tải file `ScheduleAI.ipa` bên dưới.
-            - Ký và cài đặt trực tiếp trên iPhone qua **Scarlet**, **Esign**, **GBox**, hoặc **TrollStore**.
+            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA) - Bản sửa lỗi mở app
+            - Bản build này đã tích hợp sẵn `main.jsbundle` và loại bỏ các entitlements xung đột với chứng chỉ miễn phí của Esign / Scarlet.
+            - Hỗ trợ cài đặt trên iOS 15, 16, 17, 18.
           files: ScheduleAI.ipa

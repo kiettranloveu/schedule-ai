@@ -18,11 +18,7 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        },
-        "UIBackgroundModes": [
-          "remote-notification",
-          "fetch"
-        ]
+        }
       }
     },
     "android": {
@@ -31,16 +27,6 @@
         "backgroundColor": "#0F172A"
       },
       "package": "com.scheduleai.app"
-    },
-    "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#3B82F6",
-          "sounds": []
-        }
-      ]
-    ]
+    }
   }
 }
