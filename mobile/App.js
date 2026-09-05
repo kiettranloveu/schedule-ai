@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -82,22 +82,16 @@ function MainTabs() {
 }
 
 function NavigationRoot() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const { theme, isDark } = useTheme();
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={theme.brand} />
-      </View>
-    );
-  }
-
   return (
-    <NavigationContainer>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      {user ? <MainTabs /> : <LoginScreen />}
-    </NavigationContainer>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <NavigationContainer>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        {user ? <MainTabs /> : <LoginScreen />}
+      </NavigationContainer>
+    </View>
   );
 }
 
@@ -113,7 +107,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <View style={{ flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <Text style={{ color: '#F87171', fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>ScheduleAI</Text>
+          <Text style={{ color: '#F87171', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>ScheduleAI</Text>
           <Text style={{ color: '#94A3B8', textAlign: 'center', fontSize: 14 }}>
             {String(this.state.error?.message || this.state.error || 'Đang khởi động ứng dụng...')}
           </Text>
@@ -124,10 +118,15 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const FALLBACK_METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics || FALLBACK_METRICS}>
         <ThemeProvider>
           <AuthProvider>
             <NavigationRoot />

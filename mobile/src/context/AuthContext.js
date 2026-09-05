@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadStoredAuth();
@@ -24,8 +24,6 @@ export function AuthProvider({ children }) {
       }
     } catch (e) {
       console.warn('Load auth error:', e);
-    } finally {
-      setIsLoading(false);
     }
   };
 

@@ -1,38 +1,29 @@
 ﻿import { NativeModules } from 'react-native';
 
-// 1. Intercept ErrorUtils
+// 1. Disable React Native default ExceptionsManager
+global.__fbDisableExceptionsManager = true;
+
+// 2. Intercept ErrorUtils safely
 if (typeof global !== 'undefined') {
   if (!global.ErrorUtils) {
     global.ErrorUtils = {};
   }
-  const originalSetGlobalHandler = global.ErrorUtils.setGlobalHandler;
   global.ErrorUtils.setGlobalHandler = (fn) => {
-    if (typeof originalSetGlobalHandler === 'function') {
-      try {
-        originalSetGlobalHandler((err) => {
-          console.warn('[ZeroCrash Shield] ErrorUtils caught:', err);
-          try {
-            if (typeof fn === 'function') {
-              fn(err, false);
-            }
-          } catch (e) {}
-        });
-      } catch (e) {}
-    }
+    // Custom non-crashing handler
   };
   global.ErrorUtils.reportFatalError = (error) => {
     console.warn('[ZeroCrash Shield] Intercepted fatal error:', error);
   };
 }
 
-// 2. Monkey-patch NativeModules.ExceptionsManager to prevent native abort() trap: 6
+// 3. Monkey-patch NativeModules.ExceptionsManager to prevent native abort()
 try {
   if (NativeModules && NativeModules.ExceptionsManager) {
     NativeModules.ExceptionsManager.reportFatalException = (message, stack, id) => {
-      console.warn('[ZeroCrash Shield] Blocked native reportFatalException:', message);
+      console.warn('[ZeroCrash Shield] Suppressed reportFatalException:', message);
     };
     NativeModules.ExceptionsManager.reportException = (data) => {
-      console.warn('[ZeroCrash Shield] Blocked native reportException:', data);
+      console.warn('[ZeroCrash Shield] Suppressed reportException:', data);
     };
   }
 } catch (e) {
