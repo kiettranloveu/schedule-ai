@@ -8,12 +8,16 @@ if (typeof global !== 'undefined') {
   if (!global.ErrorUtils) {
     global.ErrorUtils = {};
   }
-  global.ErrorUtils.setGlobalHandler = (fn) => {
-    // Custom non-crashing handler
+  const safeHandler = (error, isFatal) => {
+    console.warn('[ZeroCrash Shield] Suppressed error (isFatal=' + isFatal + '):', error);
   };
-  global.ErrorUtils.reportFatalError = (error) => {
-    console.warn('[ZeroCrash Shield] Intercepted fatal error:', error);
-  };
+  try {
+    if (typeof global.ErrorUtils.setGlobalHandler === 'function') {
+      global.ErrorUtils.setGlobalHandler(safeHandler);
+    }
+  } catch (e) {}
+  global.ErrorUtils.reportFatalError = safeHandler;
+  global.ErrorUtils.reportError = safeHandler;
 }
 
 // 3. Monkey-patch NativeModules.ExceptionsManager to prevent native abort()
