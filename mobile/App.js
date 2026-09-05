@@ -16,14 +16,20 @@ import SettingsScreen from './src/screens/SettingsScreen';
 
 import { Calendar, CheckSquare, Sparkles, Settings } from 'lucide-react-native';
 
-// Set global notification presentation handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Set global notification presentation handler safely
+try {
+  if (Notifications && Notifications.setNotificationHandler) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+} catch (e) {
+  console.warn('Notifications handler init error:', e);
+}
 
 const Tab = createBottomTabNavigator();
 
