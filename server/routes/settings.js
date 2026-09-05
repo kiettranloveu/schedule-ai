@@ -4,6 +4,7 @@ const db = require('../db');
 const discordBot = require('../discordBot');
 const gemini = require('../gemini');
 const scheduler = require('../scheduler');
+const pushNotification = require('../pushNotification');
 
 // Lấy toàn bộ cấu hình
 router.get('/', (req, res) => {
@@ -432,4 +433,60 @@ router.post('/test-xkiro', async (req, res) => {
   }
 });
 
+// Đăng ký Expo Push Token từ iPhone
+router.post('/push-token', (req, res) => {
+  try {
+    const { token, deviceName } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Thiếu Push Token' });
+    }
+    db.savePushToken(token, deviceName || 'iPhone');
+    console.log(`[Push] Đã đăng ký thiết bị iPhone: ${deviceName || 'iPhone'}`);
+    res.json({ success: true, message: 'Đã lưu Push Token thành công.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách thiết bị đã đăng ký Push
+router.get('/push-tokens', (req, res) => {
+  try {
+    const tokens = db.getPushTokens();
+    res.json({ success: true, data: tokens });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Xóa Push Token
+router.delete('/push-token/:token', (req, res) => {
+  try {
+    db.deletePushToken(req.params.token);
+    res.json({ success: true, message: 'Đã xóa thiết bị.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Bắn thông báo test tới iPhone
+router.post('/test-push', async (req, res) => {
+  try {
+    const { title, body } = req.body;
+    const result = await pushNotification.sendPushNotification({
+      title: title || '🎉 SCHEDULEAI THÔNG BÁO TEST',
+      body: body || 'Kết nối thông báo đẩy tới iPhone thành công! Giá vàng và thời tiết mỗi sáng sẽ được bắn thẳng tới đây.',
+      data: { type: 'test' }
+    });
+
+    if (result.success) {
+      res.json({ success: true, message: `Đã bắn thông báo thành công tới ${result.count} thiết bị iPhone!` });
+    } else {
+      res.status(400).json({ success: false, error: result.error || 'Chưa có thiết bị iPhone nào đăng ký nhận thông báo trong app.' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
+

@@ -5,6 +5,7 @@ const { getWeather } = require('./scrapers/weather');
 const { getLatestNews } = require('./scrapers/news');
 const gemini = require('./gemini');
 const discordBot = require('./discordBot');
+const pushNotification = require('./pushNotification');
 
 let activeCronTasks = [];
 
@@ -18,6 +19,8 @@ async function executeJob(job) {
   try {
     let embedOptions = {};
     let preview = '';
+    let pushTitle = `🔔 ${job.name}`;
+    let pushBody = '';
 
     if (job.type === 'gold') {
       const goldData = await getGoldPrices();
@@ -34,6 +37,8 @@ async function executeJob(job) {
         footer: 'ScheduleAI • Báo Cáo Giá Vàng Tự Động'
       };
       preview = `Giá vàng ${goldData.updated_at}: ${goldData.data[0]?.type} Mua ${goldData.data[0]?.buy} / Bán ${goldData.data[0]?.sell}`;
+      pushTitle = '🪙 BẢNG GIÁ VÀNG HÔM NAY';
+      pushBody = preview + (commentary ? ` • AI: ${commentary.slice(0, 100)}...` : '');
     } else if (job.type === 'weather') {
       const city = db.getSetting('weather_city') || 'Hà Nội';
       const weatherData = await getWeather(city);
@@ -49,6 +54,8 @@ async function executeJob(job) {
         footer: 'ScheduleAI • Bản Tin Thời Tiết Tự Động'
       };
       preview = `${weatherData.city}: ${weatherData.temp}°C, ${weatherData.condition}`;
+      pushTitle = `⛅ BẢN TIN THỜI TIẾT - ${weatherData.city.toUpperCase()}`;
+      pushBody = `${preview}. ${advice ? advice.slice(0, 120) : ''}`;
     } else if (job.type === 'daily_briefing') {
       const todayStr = new Date().toISOString().split('T')[0];
       const todayEvents = db.getEvents().filter(e => e.start_time.startsWith(todayStr));
@@ -85,6 +92,8 @@ async function executeJob(job) {
         footer: 'ScheduleAI • Trợ Lý Kế Hoạch Cá Nhân'
       };
       preview = `Hôm nay: ${todayEvents.length} sự kiện, ${pendingTasks.length} việc cần làm`;
+      pushTitle = '📋 LỊCH TRÌNH VÀ CÔNG VIỆC HÔM NAY';
+      pushBody = preview;
     } else if (job.type === 'news') {
       const articles = await getLatestNews();
       const newsContent = await gemini.generateNewsBriefing(articles, job.prompt);
@@ -94,7 +103,9 @@ async function executeJob(job) {
         description: newsContent,
         footer: 'ScheduleAI • Điểm Tin Chuyên Sâu Tự Động'
       };
-      preview = `Đã phân tích ${articles.length} tin tức nóng và gửi vào Discord`;
+      preview = `Đã phân tích ${articles.length} tin tức nóng`;
+      pushTitle = '📰 ĐIỂM TIN CÔNG NGHỆ BUỔI SÁNG';
+      pushBody = newsContent.slice(0, 150) + '...';
     } else {
       // Custom AI task
       const res = await gemini.callGemini(job.prompt || 'Hãy tạo một thông điệp ý nghĩa cho ngày hôm nay.');
@@ -105,10 +116,27 @@ async function executeJob(job) {
         footer: 'ScheduleAI Custom AI Task'
       };
       preview = res.success ? res.text.substring(0, 100) + '...' : 'Thực thi tùy chỉnh';
+      pushTitle = `🤖 ${job.name}`;
+      pushBody = preview;
     }
 
-    // Gửi thông báo sang Discord
-    await discordBot.sendDiscordNotification(embedOptions);
+    // 1. Gửi thông báo Push Notification tới iPhone
+    try {
+      await pushNotification.sendPushNotification({
+        title: pushTitle,
+        body: pushBody || preview,
+        data: { type: job.type, jobId: job.id }
+      });
+    } catch (e) {
+      console.warn('[Scheduler] Lỗi gửi push notification tới iPhone:', e.message);
+    }
+
+    // 2. Gửi thông báo sang Discord (nếu có cấu hình)
+    try {
+      await discordBot.sendDiscordNotification(embedOptions);
+    } catch (e) {
+      console.warn('[Scheduler] Gửi Discord không thành công (có thể chưa cấu hình):', e.message);
+    }
 
     // Ghi log thành công
     db.addJobLog({
@@ -116,11 +144,11 @@ async function executeJob(job) {
       job_id: job.id,
       job_name: job.name,
       status: 'success',
-      message: 'Đã thực thi và gửi thông báo Discord thành công.',
+      message: 'Đã thực thi và gửi thông báo thành công (iPhone & Discord).',
       preview
     });
     db.updateJobRunStatus(job.id, 'success', preview);
-    return { success: true, message: 'Đã thực thi tác vụ thành công và gửi sang Discord!' };
+    return { success: true, message: 'Đã thực thi tác vụ thành công!' };
   } catch (err) {
     console.error(`[Scheduler] Lỗi khi chạy job "${job.name}":`, err.message);
     db.addJobLog({
@@ -158,12 +186,22 @@ async function checkUpcomingEvents() {
       // Nếu sự kiện sắp diễn ra trong khoảng [0, reminderWindow] phút
       if (diffMinutes > 0 && diffMinutes <= reminderWindow) {
         console.log(`[Scheduler] Gửi nhắc nhở cho sự kiện: "${event.title}" (còn ${Math.round(diffMinutes)} phút)`);
-        await discordBot.sendEventReminder(event);
+        
+        // 1. Gửi Push Notification tới iPhone
+        await pushNotification.sendPushNotification({
+          title: '⏰ NHẮC LỊCH SẮP DIỄN RA!',
+          body: `"${event.title}" sẽ bắt đầu trong ${Math.round(diffMinutes)} phút nữa!`,
+          data: { type: 'event_reminder', eventId: event.id }
+        }).catch(() => {});
+
+        // 2. Gửi Discord (nếu có)
+        await discordBot.sendEventReminder(event).catch(() => {});
+        
         db.markEventReminded(event.id);
       }
     }
   } catch (err) {
-    // Không làm gián đoạn nếu Discord bot chưa cấu hình
+    // Không làm gián đoạn nếu chưa cấu hình
   }
 }
 

@@ -1,5 +1,7 @@
 node_modules/
 client/node_modules/
+mobile/node_modules/
+mobile/.expo/
 .env
 .tempmediaStorage/
 npm-debug.log*
@@ -9,3 +11,4 @@ data/*.db*
 *.db
 *.db-shm
 *.db-wal
+

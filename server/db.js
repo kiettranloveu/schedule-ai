@@ -69,6 +69,12 @@ function initSchema() {
       message TEXT,
       preview TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS push_tokens (
+      token TEXT PRIMARY KEY,
+      device_name TEXT DEFAULT 'iPhone',
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Seed default recurring jobs if table is empty
@@ -287,5 +293,22 @@ module.exports = {
   },
   getJobLogs: (limit = 30) => {
     return db.prepare('SELECT * FROM job_logs ORDER BY run_at DESC LIMIT ?').all(limit);
+  },
+
+  // Push Notifications (Expo)
+  savePushToken: (token, deviceName = 'iPhone') => {
+    if (!token) return;
+    const stmt = db.prepare(`
+      INSERT INTO push_tokens (token, device_name, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(token) DO UPDATE SET device_name = excluded.device_name, updated_at = CURRENT_TIMESTAMP
+    `);
+    stmt.run(token.trim(), deviceName);
+  },
+  getPushTokens: () => {
+    return db.prepare('SELECT * FROM push_tokens ORDER BY updated_at DESC').all();
+  },
+  deletePushToken: (token) => {
+    return db.prepare('DELETE FROM push_tokens WHERE token = ?').run(token);
   }
 };
