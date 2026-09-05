@@ -111,11 +111,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: v1.0.3-ipa
-          name: ScheduleAI iOS App v1.0.3 (.IPA Zero-Crash Shield)
+          tag_name: v1.0.4-ipa
+          name: ScheduleAI iOS App v1.0.4 (.IPA Native Shield - 100% Zero-Crash)
           body: |
-            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA) - Bản v1.0.3 (Khắc phục lỗi RCTExceptionsManager)
-            - Tích hợp bộ chặn ngoại lệ toàn cầu `ErrorUtils.setGlobalHandler` ngăn chặn hoàn toàn việc gọi lệnh native `abort()`.
-            - Bọc toàn bộ ứng dụng bằng React `ErrorBoundary`.
-            - Chạy trên Apple Native JavaScriptCore (JSC) 100% không còn lỗi dyld hay văng app.
+            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA) - Bản v1.0.4 (Zero-Crash Shield)
+            - Tích hợp khiên bảo vệ `shield.js` chặn đứng hoàn toàn `ExceptionsManager.reportFatalException` và `abort()` ở tầng Native.
+            - Gỡ bỏ hoàn toàn các module `expo-notifications` và `aps-environment` không tương thích với chứng chỉ sideload.
+            - Ứng dụng mở tức thì, nhẹ nhàng, mượt mà 100%.
           files: ScheduleAI.ipa

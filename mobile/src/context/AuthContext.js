@@ -1,9 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/client';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const AuthContext = createContext();
@@ -24,8 +21,6 @@ export function AuthProvider({ children }) {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
-        // Register push token in background
-        registerForPushNotifications();
       }
     } catch (e) {
       console.warn('Load auth error:', e);
@@ -35,42 +30,9 @@ export function AuthProvider({ children }) {
   };
 
   const registerForPushNotifications = async () => {
-    try {
-      if (!Device.isDevice) {
-        console.log('[Push] Must use physical device for Push Notifications');
-        return null;
-      }
-
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.log('[Push] Quyền thông báo bị từ chối.');
-        return null;
-      }
-
-      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      const pushTokenData = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : {});
-      const pushToken = pushTokenData.data;
-
-      console.log('[Push] Expo Push Token thu được:', pushToken);
-
-      // Gửi token lên backend lưu trữ
-      await api.post('/settings/push-token', {
-        token: pushToken,
-        deviceName: `${Device.modelName || 'iPhone'} (${Platform.OS})`
-      });
-
-      return pushToken;
-    } catch (err) {
-      console.warn('[Push] Lỗi đăng ký push token:', err.message);
-      return null;
-    }
+    return null;
   };
+
 
   const login = async (username, password) => {
     const res = await api.post('/auth/login', { username, password });
