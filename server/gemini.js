@@ -122,10 +122,9 @@ async function callOpenAICompatible(prompt, systemPrompt = '') {
 
   const candidateModels = [
     model,
-    provider === 'groq' ? 'openai/gpt-oss-120b' : null,
-    provider === 'groq' ? 'openai/gpt-oss-20b' : null,
-    provider === 'groq' ? 'qwen/qwen3.8-27b' : null,
-    provider === 'groq' ? 'qwen/qwen3.6-27b' : null,
+    provider === 'groq' ? 'llama-3.3-70b-versatile' : null,
+    provider === 'groq' ? 'llama-3.1-70b-versatile' : null,
+    provider === 'groq' ? 'mixtral-8x7b-32768' : null,
     provider === 'groq' ? 'groq/compound' : null,
     provider === 'openrouter' ? 'meta-llama/llama-3.3-70b-instruct:free' : null,
     provider === 'openrouter' ? 'deepseek/deepseek-r1:free' : null,

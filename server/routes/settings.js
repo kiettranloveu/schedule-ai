@@ -348,6 +348,7 @@ router.post('/test-xkiro', async (req, res) => {
         'deepseek-r1-distill-llama-70b',
         'mixtral-8x7b-32768',
         'deepseek-chat',
+        'groq/compound',
         'meta-llama/llama-3.3-70b-instruct:free'
       ].filter(Boolean);
       for (const m of fallbackList) {
