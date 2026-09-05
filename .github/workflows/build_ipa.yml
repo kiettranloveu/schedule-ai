@@ -13,6 +13,8 @@ jobs:
   build:
     name: Build Unsigned iOS IPA
     runs-on: macos-14
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -68,3 +70,15 @@ jobs:
           name: ScheduleAI-iOS-IPA
           path: ScheduleAI.ipa
           retention-days: 14
+
+      - name: 🌟 Create Direct Download Release (.IPA)
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: v1.0.0-ipa
+          name: ScheduleAI iOS App v1.0.0 (.IPA)
+          body: |
+            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA)
+            - Nhấn tải file `ScheduleAI.ipa` bên dưới.
+            - Ký và cài đặt trực tiếp trên iPhone qua **Scarlet**, **Esign**, **GBox**, hoặc **TrollStore**.
+          files: ScheduleAI.ipa
