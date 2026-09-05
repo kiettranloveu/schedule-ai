@@ -14,11 +14,10 @@ echo.
 echo ================================================================
 echo  * HUONG DAN DANG NHAP TREN BAN PHIM (Chi hoi 1 lan):
 echo    - Khi terminal hien: "Log in to EAS"
-echo    - Ban dung phim mui ten xuong chon: "Log in with browser" ➔ Nhan Enter
-echo    - Trinh duyet web se mo ra, ban chi can dang nhap Google la xong!
-echo    - He thong se tu dong build va gui lai LINK TAI FILE .IPA cho ban.
+echo    - Ban dung phim mui ten xuong chon: "Log in with browser"
+echo    - Nhan Enter, trinh duyet se mo ra dang nhap Google la xong!
+echo    - He thong se tu dong build va in ra LINK TAI FILE .IPA.
 echo ================================================================
 echo.
-
 call .\node_modules\.bin\eas.cmd build -p ios --profile preview
 pause
