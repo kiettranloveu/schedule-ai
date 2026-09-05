@@ -111,11 +111,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: v1.0.2-ipa
-          name: ScheduleAI iOS App v1.0.2 (.IPA Native JSC - 100% Launch Fix)
+          tag_name: v1.0.3-ipa
+          name: ScheduleAI iOS App v1.0.3 (.IPA Zero-Crash Shield)
           body: |
-            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA) - Bản v1.0.2
-            - Sử dụng Apple JavaScriptCore (JSC) nguyên bản tích hợp sẵn trong iOS, loại bỏ hoàn toàn các lỗi `dyld: Library not loaded` của Hermes.
-            - Ký mã Ad-hoc cho toàn bộ binary và frameworks.
-            - Không yêu cầu quyền APNs, mở mượt mà 100% trên Esign, Scarlet, GBox, TrollStore.
+            ### 📱 File cài đặt ScheduleAI cho iPhone (.IPA) - Bản v1.0.3 (Khắc phục lỗi RCTExceptionsManager)
+            - Tích hợp bộ chặn ngoại lệ toàn cầu `ErrorUtils.setGlobalHandler` ngăn chặn hoàn toàn việc gọi lệnh native `abort()`.
+            - Bọc toàn bộ ứng dụng bằng React `ErrorBoundary`.
+            - Chạy trên Apple Native JavaScriptCore (JSC) 100% không còn lỗi dyld hay văng app.
           files: ScheduleAI.ipa
