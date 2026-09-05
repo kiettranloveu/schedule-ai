@@ -373,6 +373,14 @@ async function testDiscordConnection(token, channelId) {
         error: 'Token Discord không hợp lệ hoặc đã bị Reset trên Discord Developer Portal. Vui lòng vào Developer Portal (mục Bot) bấm Copy Token mới và dán lại.'
       };
     }
+    if (status === 429) {
+      const retryAfter = err.response?.data?.retry_after || err.response?.headers?.['retry-after'];
+      const waitSeconds = retryAfter ? Math.ceil(Number(retryAfter)) : 'vài chục';
+      return {
+        success: false,
+        error: `Discord đang tạm thời giới hạn IP (Rate Limit 429) do gửi nhiều lần thử liên tiếp. Vui lòng đợi khoảng ${waitSeconds} giây (hoặc đổi sang mạng 4G) rồi thử lại.`
+      };
+    }
     return {
       success: false,
       error: `Lỗi xác thực Bot Token (${status || 'Mạng'}): ${err.response?.data?.message || err.message}`
@@ -406,6 +414,14 @@ async function testDiscordConnection(token, channelId) {
   } catch (err) {
     const status = err.response?.status;
     const msg = err.response?.data?.message || err.message;
+    if (status === 429) {
+      const retryAfter = err.response?.data?.retry_after || err.response?.headers?.['retry-after'];
+      const waitSeconds = retryAfter ? Math.ceil(Number(retryAfter)) : 'vài chục';
+      return {
+        success: false,
+        error: `Discord đang tạm thời giới hạn IP gửi tin (Rate Limit 429). Vui lòng đợi khoảng ${waitSeconds} giây rồi thử lại.`
+      };
+    }
     if (status === 403) {
       return {
         success: false,
