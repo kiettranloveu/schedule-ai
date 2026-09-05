@@ -666,6 +666,9 @@ export default function SettingsView({ onSettingsSaved, onRefreshStatus }) {
                   {showTokens.discord ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Lấy từ <a href="https://discord.com/developers/applications" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-medium">Discord Developer Portal</a> ➔ Mục <strong>Bot</strong> ➔ Bấm <strong>Reset Token</strong> (hoặc <strong>Copy</strong>).
+              </p>
             </div>
 
             <div>
@@ -679,26 +682,33 @@ export default function SettingsView({ onSettingsSaved, onRefreshStatus }) {
                 placeholder="VD: 123456789012345678"
                 className="w-full text-sm font-mono px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Click chuột phải vào kênh text trên Discord ➔ Chọn <strong>Copy Channel ID</strong>.
+              </p>
             </div>
           </div>
 
           {/* Test Discord Button */}
-          <div className="flex items-center space-x-3 pt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
             <button
               type="button"
               onClick={handleTestDiscord}
               disabled={testingDiscord || !formData.discord_bot_token || !formData.discord_channel_id}
-              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition disabled:opacity-50"
+              className="flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition disabled:opacity-50 shrink-0"
             >
               {testingDiscord ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Radio className="w-3.5 h-3.5 mr-1" />}
               <span>Kiểm Tra & Bắn Tin Thử Nghiệm</span>
             </button>
 
             {discordResult && (
-              <span className={`text-xs font-semibold flex items-center ${discordResult.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                {discordResult.success ? <CheckCircle2 className="w-4 h-4 mr-1 shrink-0" /> : <AlertCircle className="w-4 h-4 mr-1 shrink-0" />}
-                {discordResult.text}
-              </span>
+              <div className={`text-xs font-semibold flex items-start space-x-2 p-2.5 rounded-xl leading-relaxed ${
+                discordResult.success
+                  ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : 'text-rose-700 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+              }`}>
+                {discordResult.success ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" /> : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-600" />}
+                <span>{discordResult.text}</span>
+              </div>
             )}
           </div>
         </div>

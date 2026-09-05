@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, Partials } = require('discord.js');
+const axios = require('axios');
 const db = require('./db');
 const { getGoldPrices } = require('./scrapers/goldPrice');
 const { getWeather } = require('./scrapers/weather');
@@ -17,8 +18,8 @@ let botStatus = {
  * Khởi tạo hoặc khởi động lại Discord Bot
  */
 async function initDiscordBot() {
-  const token = db.getSetting('discord_bot_token') || process.env.DISCORD_BOT_TOKEN;
-  const channelId = db.getSetting('discord_channel_id') || process.env.DISCORD_CHANNEL_ID;
+  const token = (db.getSetting('discord_bot_token') || process.env.DISCORD_BOT_TOKEN || '').trim();
+  const channelId = (db.getSetting('discord_channel_id') || process.env.DISCORD_CHANNEL_ID || '').trim();
 
   botStatus.channelId = channelId || null;
 
@@ -27,6 +28,25 @@ async function initDiscordBot() {
     botStatus.username = null;
     botStatus.lastError = 'Chưa cấu hình Discord Bot Token trong Cài đặt.';
     console.log('[DiscordBot] Chưa có token. Chờ người dùng cấu hình.');
+    return;
+  }
+
+  // 1. Kiểm tra nhanh tính hợp lệ của token qua REST API trước khi kết nối Gateway
+  try {
+    const userRes = await axios.get('https://discord.com/api/v10/users/@me', {
+      headers: { Authorization: `Bot ${token}` },
+      timeout: 5000
+    });
+    botStatus.username = `${userRes.data.username}#${userRes.data.discriminator || '0'}`;
+  } catch (err) {
+    botStatus.connected = false;
+    botStatus.username = null;
+    if (err.response?.status === 401) {
+      botStatus.lastError = 'Token Discord không hợp lệ hoặc đã bị Reset trên Discord Developer Portal.';
+    } else {
+      botStatus.lastError = `Lỗi xác thực Bot Token: ${err.message}`;
+    }
+    console.warn('[DiscordBot] Token không hợp lệ:', botStatus.lastError);
     return;
   }
 
@@ -194,7 +214,11 @@ async function initDiscordBot() {
   } catch (err) {
     console.error('[DiscordBot] Login error:', err.message);
     botStatus.connected = false;
-    botStatus.lastError = err.message;
+    if (err.message && err.message.includes('DisallowedIntents')) {
+      botStatus.lastError = 'Cần bật "MESSAGE CONTENT INTENT" trên Discord Developer Portal (mục Bot).';
+    } else {
+      botStatus.lastError = err.message;
+    }
   }
 }
 
@@ -238,37 +262,70 @@ async function handleTodaySchedule(message) {
 }
 
 /**
- * Gửi thông báo Rich Embed tới Channel mặc định
+ * Gửi thông báo Rich Embed tới Channel mặc định (hỗ trợ WebSocket & REST API Fallback)
  */
 async function sendDiscordNotification(embedOptions) {
-  if (!client || !client.isReady()) {
-    throw new Error('Discord Bot chưa kết nối. Vui lòng kiểm tra Token trong Cài đặt.');
+  const token = (db.getSetting('discord_bot_token') || process.env.DISCORD_BOT_TOKEN || '').trim();
+  const channelId = (db.getSetting('discord_channel_id') || process.env.DISCORD_CHANNEL_ID || '').trim();
+
+  if (!token || !channelId) {
+    throw new Error('Chưa cấu hình Discord Bot Token hoặc Channel ID.');
   }
 
-  const channelId = db.getSetting('discord_channel_id') || process.env.DISCORD_CHANNEL_ID;
-  if (!channelId) {
-    throw new Error('Chưa cấu hình Discord Channel ID.');
+  // 1. Gửi qua WebSocket Client nếu đang ready
+  if (client && client.isReady()) {
+    try {
+      const channel = await client.channels.fetch(channelId);
+      if (channel && channel.isTextBased()) {
+        const embed = new EmbedBuilder()
+          .setColor(embedOptions.color || '#3B82F6')
+          .setTitle(embedOptions.title || 'ScheduleAI Thông Báo')
+          .setDescription(embedOptions.description || '')
+          .setTimestamp();
+
+        if (embedOptions.fields && Array.isArray(embedOptions.fields)) {
+          embed.addFields(embedOptions.fields);
+        }
+
+        if (embedOptions.footer) {
+          const footerText = typeof embedOptions.footer === 'object' ? embedOptions.footer.text : embedOptions.footer;
+          embed.setFooter({ text: footerText });
+        }
+
+        return await channel.send({ embeds: [embed] });
+      }
+    } catch (e) {
+      console.warn('[DiscordBot] Gửi qua WebSocket gặp lỗi, chuyển sang REST API:', e.message);
+    }
   }
 
-  const channel = await client.channels.fetch(channelId).catch(err => {
-    throw new Error(`Không tìm thấy kênh Discord (${channelId}): ${err.message}`);
+  // 2. Fallback gửi trực tiếp qua Discord REST API (cực kỳ ổn định)
+  let colorInt = 0x3B82F6;
+  if (embedOptions.color) {
+    const hex = embedOptions.color.replace('#', '');
+    colorInt = parseInt(hex, 16) || 0x3B82F6;
+  }
+
+  const embed = {
+    color: colorInt,
+    title: embedOptions.title || 'ScheduleAI Thông Báo',
+    description: embedOptions.description || '',
+    fields: embedOptions.fields || [],
+    footer: embedOptions.footer ? (typeof embedOptions.footer === 'object' ? embedOptions.footer : { text: embedOptions.footer }) : undefined,
+    timestamp: new Date().toISOString()
+  };
+
+  const res = await axios.post(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    embeds: [embed]
+  }, {
+    headers: {
+      Authorization: `Bot ${token}`,
+      'Content-Type': 'application/json'
+    },
+    timeout: 8000
   });
 
-  const embed = new EmbedBuilder()
-    .setColor(embedOptions.color || '#3B82F6')
-    .setTitle(embedOptions.title || 'ScheduleAI Thông Báo')
-    .setDescription(embedOptions.description || '')
-    .setTimestamp();
-
-  if (embedOptions.fields && Array.isArray(embedOptions.fields)) {
-    embed.addFields(embedOptions.fields);
-  }
-
-  if (embedOptions.footer) {
-    embed.setFooter({ text: embedOptions.footer });
-  }
-
-  return await channel.send({ embeds: [embed] });
+  return res.data;
 }
 
 /**
@@ -290,41 +347,81 @@ async function sendEventReminder(event) {
 }
 
 /**
- * Test gửi tin nhắn thử nghiệm
+ * Test kết nối Discord & gửi tin nhắn thử nghiệm (Dùng REST API: phản hồi tức thì < 300ms, không treo Timeout)
  */
 async function testDiscordConnection(token, channelId) {
-  if (!token || !channelId) {
-    return { success: false, error: 'Thiếu Token hoặc Channel ID.' };
+  const cleanToken = (token || '').trim();
+  const cleanChannelId = (channelId || '').trim();
+
+  if (!cleanToken || !cleanChannelId) {
+    return { success: false, error: 'Vui lòng nhập đầy đủ Discord Bot Token và Channel ID.' };
   }
 
-  const testClient = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
-  });
-
+  // 1. Kiểm tra Token qua REST API
+  let botUser = null;
   try {
-    const loginPromise = testClient.login(token);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Quá thời gian kết nối (Timeout). Vui lòng thử lại.')), 10000));
-    await Promise.race([loginPromise, timeoutPromise]);
-    
-    const channel = await testClient.channels.fetch(channelId);
-    if (!channel || !channel.isTextBased()) {
-      await testClient.destroy();
-      return { success: false, error: 'Channel ID không hợp lệ hoặc không phải là kênh text.' };
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor('#10B981')
-      .setTitle('🎉 KẾT NỐI SCHEDULEAI THÀNH CÔNG!')
-      .setDescription('Discord Bot đã kết nối thành công với ứng dụng ScheduleAI của bạn. Các báo cáo định kỳ (giá vàng, thời tiết, nhắc việc) sẽ được gửi tại kênh này.')
-      .setFooter({ text: 'ScheduleAI by Antigravity' })
-      .setTimestamp();
-
-    await channel.send({ embeds: [embed] });
-    await testClient.destroy();
-    return { success: true, message: 'Đã gửi tin nhắn thử nghiệm thành công!' };
+    const userRes = await axios.get('https://discord.com/api/v10/users/@me', {
+      headers: { Authorization: `Bot ${cleanToken}` },
+      timeout: 6000
+    });
+    botUser = userRes.data;
   } catch (err) {
-    try { await testClient.destroy(); } catch (e) {}
-    return { success: false, error: err.message };
+    const status = err.response?.status;
+    if (status === 401) {
+      return {
+        success: false,
+        error: 'Token Discord không hợp lệ hoặc đã bị Reset trên Discord Developer Portal. Vui lòng vào Developer Portal (mục Bot) bấm Copy Token mới và dán lại.'
+      };
+    }
+    return {
+      success: false,
+      error: `Lỗi xác thực Bot Token (${status || 'Mạng'}): ${err.response?.data?.message || err.message}`
+    };
+  }
+
+  // 2. Gửi tin nhắn thử nghiệm trực tiếp qua REST API
+  try {
+    const embed = {
+      color: 0x10B981,
+      title: '🎉 KẾT NỐI SCHEDULEAI THÀNH CÔNG!',
+      description: `Discord Bot (**${botUser.username}#${botUser.discriminator || '0'}**) đã kết nối thành công với ứng dụng ScheduleAI!\n\nCác thông báo tự động (giá vàng, thời tiết, sự kiện) sẽ được gửi đến kênh này.`,
+      footer: { text: 'ScheduleAI by Antigravity' },
+      timestamp: new Date().toISOString()
+    };
+
+    await axios.post(`https://discord.com/api/v10/channels/${cleanChannelId}/messages`, {
+      embeds: [embed]
+    }, {
+      headers: {
+        Authorization: `Bot ${cleanToken}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 8000
+    });
+
+    return {
+      success: true,
+      message: `Đã kết nối thành công với Bot "${botUser.username}" và bắn tin nhắn thử nghiệm lên Discord!`
+    };
+  } catch (err) {
+    const status = err.response?.status;
+    const msg = err.response?.data?.message || err.message;
+    if (status === 403) {
+      return {
+        success: false,
+        error: `Bot "${botUser.username}" chưa có quyền gửi tin trong kênh này (Missing Permissions: Send Messages / Embed Links). Vui lòng cấp quyền cho Bot trong Discord Server.`
+      };
+    }
+    if (status === 404) {
+      return {
+        success: false,
+        error: `Không tìm thấy kênh với ID: ${cleanChannelId}. Vui lòng kiểm tra lại Channel ID (đảm bảo Bot đã được mời vào Server).`
+      };
+    }
+    return {
+      success: false,
+      error: `Lỗi gửi tin tới kênh (${status}): ${msg}`
+    };
   }
 }
 
