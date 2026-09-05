@@ -41,6 +41,20 @@ async function sendPushNotification({ title, body, data = {}, sound = 'default' 
     });
 
     console.log('[Push] Kết quả gửi thành công:', response.data);
+
+    // Tự động dọn dẹp các token đã gỡ cài đặt app
+    if (response.data && Array.isArray(response.data.data)) {
+      response.data.data.forEach((ticket, idx) => {
+        if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
+          const deadToken = tokens[idx]?.token;
+          if (deadToken) {
+            console.log(`[Push] Tự động xóa token đã gỡ cài đặt: ${deadToken}`);
+            db.deletePushToken(deadToken);
+          }
+        }
+      });
+    }
+
     return { success: true, count: messages.length, data: response.data };
   } catch (err) {
     console.error('[Push] Lỗi gửi Push Notification:', err.response?.data || err.message);

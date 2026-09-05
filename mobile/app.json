@@ -14,7 +14,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.scheduleai.app"
+      "bundleIdentifier": "com.scheduleai.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {

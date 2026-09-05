@@ -5,10 +5,14 @@ cls
 echo ================================================================
 echo           SCHEDULEAI - KHOI CHAY APP CHO IPHONE (EXPO)
 echo ================================================================
-echo.
-echo [1/2] Dang khoi dong ScheduleAI Backend Server...
-start "ScheduleAI Backend Server" cmd /c "node server/index.js"
-timeout /t 2 > nul
+netstat -ano | findstr :5000 | findstr LISTENING > nul
+if %errorlevel% neq 0 (
+    echo [1/2] Dang khoi dong ScheduleAI Backend Server...
+    start "ScheduleAI Backend Server" cmd /c "node server/index.js"
+    timeout /t 2 > nul
+) else (
+    echo [1/2] Backend Server da dang chay san tai http://localhost:5000.
+)
 
 echo.
 echo [2/2] Dang khoi chay Expo Dev Server cho iPhone...

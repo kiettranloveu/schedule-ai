@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
+import { getLocalDateString, formatTimeVN } from '../utils/dateUtils';
 import { Sparkles, Plus, Clock, Tag, Trash2, Calendar as CalendarIcon, Check } from 'lucide-react-native';
 
 const CATEGORY_COLORS = {
@@ -27,7 +28,7 @@ export default function CalendarScreen() {
   const { theme } = useTheme();
 
   const [events, setEvents] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -163,9 +164,9 @@ export default function CalendarScreen() {
     return (
       <View style={styles.dayStripContainer}>
         {days.map((dateObj, idx) => {
-          const dateStr = dateObj.toISOString().split('T')[0];
+          const dateStr = getLocalDateString(dateObj);
           const isSelected = dateStr === selectedDate;
-          const isToday = dateStr === new Date().toISOString().split('T')[0];
+          const isToday = dateStr === getLocalDateString();
 
           const dayOfWeekName = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][dateObj.getDay()];
           const dayNum = dateObj.getDate();
